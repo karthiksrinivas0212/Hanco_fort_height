@@ -1,0 +1,6 @@
+* { box-sizing: border-box; }
+:root { font-family: "Open Sans", sans-serif; color-scheme: light; font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }
+body { margin: 0; }
+#root { width: 100%; min-height: 100svh; }
+button, input { font: inherit; }
+html { scroll-behavior: smooth; }
