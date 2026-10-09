@@ -1,0 +1,1 @@
+Place logo.png and hero-bg.jpg here. The page automatically displays them when available. The enquiry form currently shows contact information; connect a real submission endpoint before collecting enquiries.
