@@ -21,7 +21,7 @@ app.get("/api/message", (req, res) => {
 
 // Hanco Fort Heights enquiry form API
 app.post("/api/submit", (req, res) => {
-  const { name, phone, email, city } = req.body || {};
+  const { name, phone, email, city, dialCode = "+91", type = "enquiry" } = req.body || {};
 
   // Validate form fields
   if (
@@ -29,7 +29,10 @@ app.post("/api/submit", (req, res) => {
     typeof phone !== "string" ||
     typeof email !== "string" ||
     !name.trim() ||
-    !/^[0-9]{10}$/.test(phone) ||
+    (dialCode === "+91" ? !/^[0-9]{10}$/.test(phone) : !/^[0-9]{6,14}$/.test(phone)) ||
+    typeof dialCode !== "string" || !/^\+[0-9]{1,4}$/.test(dialCode) ||
+    dialCode.length - 1 + phone.length > 15 ||
+    !["enquiry", "visit"].includes(type) ||
     !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
   ) {
     return res.status(400).json({
@@ -43,7 +46,9 @@ app.post("/api/submit", (req, res) => {
     name,
     phone,
     email,
-    city
+    city,
+    dialCode,
+    type
   });
 
   // Send response to React

@@ -36,7 +36,7 @@ export default function PhoneField({ name, value, onChange, placeholder }) {
       </div>
       <input type="hidden" name={name + "CountryCode"} value={country} />
       <input type="hidden" name={name + "DialCode"} value={code} />
-      <input name={name} type="tel" autoComplete="tel-national" placeholder={placeholder} aria-label={placeholder} value={value} onChange={onChange} required />
+      <input name={name} type="tel" autoComplete="tel-national" placeholder={placeholder} aria-label={placeholder} value={value} onChange={onChange} pattern={code === "+91" ? "[0-9]{10}" : "[0-9]{6," + Math.min(14, 15 - code.length + 1) + "}"} title={code === "+91" ? "Enter a 10-digit mobile number" : "Enter a valid phone number using digits only"} inputMode="numeric" required />
       {open && <div className="phone-country-popup" id={popupId}>
         <input className="phone-country-search" ref={search} type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search country or code" aria-label="Search country or calling code" onKeyDown={(event) => {
           if (event.key === "Enter") event.preventDefault();

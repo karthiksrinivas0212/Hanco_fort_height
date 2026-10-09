@@ -1,7 +1,9 @@
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./App.css";
 import PhoneField from "./PhoneField.jsx";
+import ThankYou from "./ThankYou.jsx";
+import { submitEnquiry } from "./submitEnquiry.js";
 import heroBackground from "./assets/BG green overlay.png";
 import brandLogo from "./assets/Logo.png";
 import masterBedroom from "./assets/Bedroom.png";
@@ -74,16 +76,54 @@ function App() {
   });
 
   const [status, setStatus] = useState("");
-  const [visitRequested, setVisitRequested] = useState(false);
-  const submitting = false;
+  const [visitStatus, setVisitStatus] = useState("");
+  const [submitting, setSubmitting] = useState("");
+  const submissionLock = useRef(false);
+  const [route, setRoute] = useState(window.location.hash);
+
+  useEffect(() => {
+    const updateRoute = (event) => {
+      const nextRoute = window.location.hash;
+      setRoute(nextRoute);
+      if (nextRoute.startsWith("#/thank-you") || event.oldURL.includes("#/thank-you")) {
+        window.scrollTo(0, 0);
+      }
+    };
+    window.addEventListener("hashchange", updateRoute);
+    return () => window.removeEventListener("hashchange", updateRoute);
+  }, []);
+
+  useEffect(() => {
+    document.title = route.startsWith("#/thank-you") ? "Thank you | Hanco Fort Heights" : "Hanco Fort Heights";
+  }, [route]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setStatus("preview");
+  const handleSubmit = async (event, kind) => {
+    event.preventDefault();
+    const element = event.currentTarget;
+    if (submissionLock.current) return;
+    for (const field of element.elements) {
+      if (field.required && field.type !== "email" && field.type !== "tel") {
+        field.setCustomValidity(field.value.trim() ? "" : "Please fill in this field.");
+      }
+    }
+    if (!element.reportValidity()) return;
+    const setFeedback = kind === "visit" ? setVisitStatus : setStatus;
+    submissionLock.current = true;
+    setSubmitting(kind);
+    setFeedback("");
+    try {
+      await submitEnquiry(new FormData(element), kind);
+      window.location.hash = "/thank-you?type=" + kind;
+    } catch (error) {
+      setFeedback(error.message);
+    } finally {
+      submissionLock.current = false;
+      setSubmitting("");
+    }
   };
 
   const scrollToForm = () => {
@@ -92,6 +132,8 @@ function App() {
       block: "center"
     });
   };
+
+  if (route.startsWith("#/thank-you")) return <ThankYou visit={route.includes("type=visit")} logo={brandLogo} />;
 
   return (
     <div className="site">
@@ -116,8 +158,8 @@ function App() {
             </div>
           </a>
 
-          <nav className={menuOpen ? "nav open" : "nav"}>
-            <a href="#overview" onClick={() => setMenuOpen(false)}>
+          <nav className={menuOpen ? "nav open" : "nav"} onClick={() => setMenuOpen(false)}>
+            <a href="#overview">
               Overview
             </a>
             <a href="#floor-plans">Floor Plans</a>
@@ -188,7 +230,7 @@ function App() {
                 Our team will call you within 30 minutes.
               </p>
 
-              <form onSubmit={handleSubmit}>
+              <form noValidate onSubmit={(event) => handleSubmit(event, "enquiry")} onInput={(event) => event.target.setCustomValidity?.("")} onInvalid={(event) => event.currentTarget.classList.add("validation-attempted")}>
                 <input
                   name="name"
                   type="text"
@@ -220,22 +262,12 @@ function App() {
                 <button
                   type="submit"
                   className="gold-button form-submit"
-                  disabled={submitting}
+                  disabled={Boolean(submitting)}
                 >
-                  {submitting ? "Submitting..." : "Enquire Now"}
+                  {submitting === "enquiry" ? "Submitting..." : "Enquire Now"}
                 </button>
 
-                {status === "preview" && (
-                  <p className="form-success" role="status">
-                    Thanks for your interest. Please call +91 812 905 3222 to enquire.
-                  </p>
-                )}
-
-                {status === "error" && (
-                  <p className="form-error" role="alert">
-                    Unable to submit. Please try again.
-                  </p>
-                )}
+                {status && <p className="form-error" role="alert">{status}</p>}
               </form>
 
               <p className="form-disclaimer">
@@ -372,13 +404,13 @@ function App() {
             <div className="site-visit-card" id="site-visit-form">
               <h3>Book a site visit</h3>
               <p>We'll confirm by phone.</p>
-              <form onSubmit={(event) => { event.preventDefault(); setVisitRequested(true); }}>
+              <form noValidate onSubmit={(event) => handleSubmit(event, "visit")} onInput={(event) => event.target.setCustomValidity?.("")} onInvalid={(event) => event.currentTarget.classList.add("validation-attempted")}>
                 <input name="visitName" autoComplete="name" placeholder="Your name" aria-label="Your name" required />
                 <PhoneField name="visitPhone" placeholder="Mobile number" />
                 <input name="visitEmail" type="email" autoComplete="email" placeholder="Email" aria-label="Email" required />
                 <input name="visitCity" autoComplete="address-level2" placeholder="City" aria-label="City" />
-                <button type="submit">Book my visit</button>
-                {visitRequested && <p className="visit-feedback" role="status">Please call <a href="tel:+918129053222">+91 812 905 3222</a> to confirm your visit.</p>}
+                <button type="submit" disabled={Boolean(submitting)}>{submitting === "visit" ? "Submitting..." : "Book my visit"}</button>
+                {visitStatus && <p className="form-error" role="alert">{visitStatus}</p>}
               </form>
             </div>
           </div>
