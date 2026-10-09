@@ -29,9 +29,8 @@ app.post("/api/submit", (req, res) => {
     typeof phone !== "string" ||
     typeof email !== "string" ||
     !name.trim() ||
-    (dialCode === "+91" ? !/^[0-9]{10}$/.test(phone) : !/^[0-9]{6,14}$/.test(phone)) ||
+    !/^[0-9]+$/.test(phone) ||
     typeof dialCode !== "string" || !/^\+[0-9]{1,4}$/.test(dialCode) ||
-    dialCode.length - 1 + phone.length > 15 ||
     !["enquiry", "visit"].includes(type) ||
     !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
   ) {
