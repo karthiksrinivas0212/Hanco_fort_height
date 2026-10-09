@@ -4,5 +4,6 @@ import { defineConfig } from 'vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  base: '/Hanco_fort_height/',
   server: { proxy: { "/api": "http://localhost:5000" } },
 })
